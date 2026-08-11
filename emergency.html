@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EarnGrid — Emergency Withdrawal</title>
+<meta name="description" content="Self-contained emergency withdrawal interface for the EarnGrid BlendedVault on Base. Works with no server, no build step, and no dependency on earngrid.site.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #0a0e14;
+    --bg-secondary: #111820;
+    --bg-card: #151c27;
+    --bg-input: #0d131c;
+    --border: #1e2a3a;
+    --accent: #00ff88;
+    --accent-dim: #00cc6a;
+    --accent-glow: rgba(0, 255, 136, 0.12);
+    --danger: #ff4444;
+    --danger-glow: rgba(255, 68, 68, 0.1);
+    --warning: #ffaa00;
+    --warning-glow: rgba(255, 170, 0, 0.08);
+    --info: #4488ff;
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --text-muted: #4d5866;
+    --mono: 'JetBrains Mono', 'Fira Code', ui-monospace, 'Cascadia Code', Consolas, monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --radius: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scrollbar-width: thin; scrollbar-color: var(--border) var(--bg-primary); }
+
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--sans);
+    line-height: 1.6;
+    min-height: 100vh;
+    padding-bottom: 96px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 900px; margin: 0 auto; padding: 32px 20px 0; }
+
+  /* ── Header ───────────────────────────────────────────────── */
+  .logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.15;
+    color: var(--accent);
+    white-space: pre;
+    overflow-x: auto;
+    margin-bottom: 18px;
+    text-shadow: 0 0 18px var(--accent-glow);
+  }
+  h1 {
+    font-family: var(--mono);
+    font-size: clamp(22px, 5vw, 32px);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--danger);
+    margin-bottom: 6px;
+  }
+  .subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 20px; }
+
+  .banner {
+    border: 1px solid var(--danger);
+    background: var(--danger-glow);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 28px;
+    font-size: 14px;
+  }
+  .banner strong { color: var(--danger); display: block; margin-bottom: 6px; font-size: 13px; letter-spacing: 0.05em; text-transform: uppercase; font-family: var(--mono); }
+  .banner ul { margin: 8px 0 0 18px; color: var(--text-secondary); }
+  .banner li { margin-bottom: 4px; }
+
+  /* ── Cards & sections ─────────────────────────────────────── */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .section-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+  .section-num {
+    font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+    color: var(--bg-primary); background: var(--accent); padding: 2px 8px; border-radius: 4px;
+  }
+  .section-num.alt { background: var(--warning); }
+  h2 { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; }
+  .section-desc { color: var(--text-secondary); font-size: 13.5px; margin-bottom: 18px; }
+
+  /* ── Stat grid ────────────────────────────────────────────── */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
+  .stat { background: var(--bg-card); padding: 14px 16px; }
+  .stat-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-family: var(--mono); margin-bottom: 5px; }
+  .stat-value { font-family: var(--mono); font-size: 17px; font-weight: 600; word-break: break-all; }
+  .stat-value.dim { color: var(--text-muted); font-weight: 400; }
+  .stat-sub { font-size: 11px; color: var(--text-secondary); font-family: var(--mono); margin-top: 3px; }
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.bad { color: var(--danger); }
+  .stat-value.warn { color: var(--warning); }
+
+  /* ── Forms ────────────────────────────────────────────────── */
+  .field { margin-bottom: 14px; }
+  label { display: block; font-size: 11px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); margin-bottom: 6px; }
+  .input-row { display: flex; gap: 8px; align-items: stretch; }
+  input[type="text"] {
+    flex: 1; min-width: 0;
+    background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text-primary); font-family: var(--mono); font-size: 15px; padding: 11px 13px;
+    transition: border-color .15s;
+  }
+  input[type="text"]:focus { outline: none; border-color: var(--accent); }
+  input[type="text"].invalid { border-color: var(--danger); }
+  input[type="text"]:disabled { opacity: .5; cursor: not-allowed; }
+  .suffix { display: flex; align-items: center; padding: 0 12px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; font-family: var(--mono); font-size: 13px; color: var(--text-secondary); }
+  .hint { font-size: 12px; color: var(--text-secondary); margin-top: 6px; font-family: var(--mono); }
+  .hint.error { color: var(--danger); }
+  .hint.warn { color: var(--warning); }
+
+  /* ── Buttons ──────────────────────────────────────────────── */
+  button {
+    font-family: var(--mono); font-size: 13.5px; font-weight: 600; letter-spacing: 0.02em;
+    border-radius: 8px; padding: 11px 18px; cursor: pointer; border: 1px solid transparent;
+    transition: filter .15s, background .15s, border-color .15s;
+  }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  button:not(:disabled):hover { filter: brightness(1.12); }
+  .btn-primary { background: var(--accent); color: #04120a; }
+  .btn-danger  { background: var(--danger); color: #fff; }
+  .btn-ghost   { background: transparent; color: var(--text-secondary); border-color: var(--border); }
+  .btn-warning { background: transparent; color: var(--warning); border-color: var(--warning); }
+  .btn-sm { padding: 8px 13px; font-size: 12.5px; }
+  .btn-block { width: 100%; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  /* ── Connect bar ──────────────────────────────────────────── */
+  .connect { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+  .acct { font-family: var(--mono); font-size: 13px; }
+  .acct-addr { color: var(--accent); word-break: break-all; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; padding: 3px 9px; border-radius: 20px; border: 1px solid var(--border); color: var(--text-secondary); }
+  .pill.ok { color: var(--accent); border-color: var(--accent); }
+  .pill.bad { color: var(--danger); border-color: var(--danger); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* ── Notices ──────────────────────────────────────────────── */
+  .notice { border-radius: 8px; padding: 12px 14px; font-size: 13px; margin-bottom: 16px; border: 1px solid; }
+  .notice-warn { border-color: var(--warning); background: var(--warning-glow); color: var(--text-primary); }
+  .notice-danger { border-color: var(--danger); background: var(--danger-glow); color: var(--text-primary); }
+  .notice-info { border-color: var(--border); background: var(--bg-secondary); color: var(--text-secondary); }
+  .notice b { color: var(--warning); }
+  .notice-danger b { color: var(--danger); }
+
+  /* ── Strategy rows ────────────────────────────────────────── */
+  .strat { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; background: var(--bg-secondary); }
+  .strat-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .strat-name { font-weight: 600; font-size: 15px; }
+  .strat-meta { font-family: var(--mono); font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+  .strat-meta a { color: var(--text-secondary); text-decoration: none; border-bottom: 1px dotted var(--text-muted); }
+  .strat-meta a:hover { color: var(--accent); }
+  .strat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 14px; }
+  .strat-cell { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+
+  /* ── Modal ────────────────────────────────────────────────── */
+  .overlay { position: fixed; inset: 0; background: rgba(3, 6, 10, .82); backdrop-filter: blur(3px); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 100; }
+  .overlay.open { display: flex; }
+  .modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 22px; max-width: 460px; width: 100%; max-height: 90vh; overflow-y: auto; }
+  .modal h3 { font-family: var(--mono); font-size: 15px; margin-bottom: 14px; letter-spacing: 0.03em; }
+  .kv { display: flex; justify-content: space-between; gap: 14px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .kv:last-of-type { border-bottom: none; }
+  .kv-k { color: var(--text-secondary); flex-shrink: 0; }
+  .kv-v { font-family: var(--mono); text-align: right; word-break: break-all; }
+  .modal .btn-row { margin-top: 18px; }
+  .modal .btn-row button { flex: 1; }
+
+  /* ── Tx status bar ────────────────────────────────────────── */
+  .txbar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 90;
+    background: var(--bg-card); border-top: 1px solid var(--border);
+    padding: 12px 20px; display: none;
+  }
+  .txbar.open { display: block; }
+  .txbar-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .txbar-msg { font-family: var(--mono); font-size: 13px; flex: 1; min-width: 200px; }
+  .txbar.state-pending { border-top-color: var(--warning); }
+  .txbar.state-ok { border-top-color: var(--accent); }
+  .txbar.state-err { border-top-color: var(--danger); }
+  .state-pending .txbar-msg { color: var(--warning); }
+  .state-ok .txbar-msg { color: var(--accent); }
+  .state-err .txbar-msg { color: var(--danger); }
+  .spinner { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--warning); border-radius: 50%; animation: spin .8s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  a.link { color: var(--accent); font-family: var(--mono); font-size: 12.5px; text-decoration: none; border-bottom: 1px solid var(--accent-glow); }
+  a.link:hover { border-bottom-color: var(--accent); }
+
+  /* ── History ──────────────────────────────────────────────── */
+  .hist-item { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 12.5px; font-family: var(--mono); flex-wrap: wrap; }
+  .hist-item:last-child { border-bottom: none; }
+
+  footer { max-width: 900px; margin: 0 auto; padding: 8px 20px 40px; color: var(--text-muted); font-size: 12px; font-family: var(--mono); line-height: 1.9; }
+  footer a { color: var(--text-secondary); text-decoration: none; border-bottom: 1px dotted var(--text-muted); }
+  footer a:hover { color: var(--accent); }
+
+  .rpc-status { font-family: var(--mono); font-size: 11px; color: var(--text-muted); }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+
+  @media (max-width: 640px) {
+    .wrap { padding: 20px 14px 0; }
+    .logo { font-size: 9px; }
+    .card { padding: 16px; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    .stat-value { font-size: 15px; }
+    .connect { flex-direction: column; align-items: stretch; }
+    .connect button { width: 100%; }
+    .btn-row button { width: 100%; }
+    .input-row { flex-wrap: wrap; }
+    .strat-grid { grid-template-columns: 1fr; }
+    body { padding-bottom: 120px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- ══ Header ══════════════════════════════════════════════ -->
+  <header>
+    <div class="logo">█▀▀ ▄▀█ █▀█ █▄░█ █▀▀ █▀█ █ █▀▄
+██▄ █▀█ █▀▄ █░▀█ █▄█ █▀▄ █ █▄▀</div>
+    <h1>EMERGENCY WITHDRAWAL</h1>
+    <p class="subtitle">Direct, serverless access to your funds in the EarnGrid BlendedVault on Base.</p>
+
+    <div class="banner">
+      <strong>⚠ Read before you sign</strong>
+      Use this page only if <b>earngrid.site</b> is down. It talks straight to the contracts — no EarnGrid
+      server is involved.
+      <ul>
+        <li><b>Always verify the transaction in your wallet before signing.</b> Check the contract address and the amount.</li>
+        <li>Confirm the URL is one you trust. Bookmark it now, while things are calm.</li>
+        <li>Nobody from EarnGrid will ever ask for your seed phrase or private key.</li>
+        <li>Your funds live in the contracts, not on this page. This is just a keyboard.</li>
+      </ul>
+    </div>
+  </header>
+
+  <!-- ══ Connect ═════════════════════════════════════════════ -->
+  <div class="card">
+    <div class="connect">
+      <div>
+        <div id="conn-status" class="acct">Wallet not connected</div>
+        <div id="conn-detail" class="rpc-status" style="margin-top:4px;">Connect an injected wallet (MetaMask) to continue.</div>
+      </div>
+      <div class="btn-row">
+        <button id="btn-connect" class="btn-primary">Connect Wallet</button>
+        <button id="btn-switch" class="btn-warning" style="display:none;">Switch to Base</button>
+        <button id="btn-refresh" class="btn-ghost" style="display:none;">Refresh</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Section 1 — Vault ═══════════════════════════════════ -->
+  <section class="card">
+    <div class="section-head">
+      <span class="section-num">01</span>
+      <h2>Withdraw from the EarnGrid Vault</h2>
+    </div>
+    <p class="section-desc">
+      The normal exit. Your <span class="mono">bvUSDC</span> shares are redeemed for USDC by the vault,
+      which pulls liquidity from its strategies as needed.
+    </p>
+
+    <div id="vault-alert"></div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">Your shares</div>
+        <div class="stat-value dim" id="v-shares">—</div>
+        <div class="stat-sub" id="v-shares-sub">bvUSDC</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Your position</div>
+        <div class="stat-value dim" id="v-position">—</div>
+        <div class="stat-sub">USDC value of your shares</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Withdrawable now</div>
+        <div class="stat-value dim" id="v-maxwithdraw">—</div>
+        <div class="stat-sub" id="v-maxwithdraw-sub">limited by available liquidity</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Vault TVL</div>
+        <div class="stat-value dim" id="v-tvl">—</div>
+        <div class="stat-sub">total assets</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Share price</div>
+        <div class="stat-value dim" id="v-price">—</div>
+        <div class="stat-sub">USDC per bvUSDC</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Withdrawals</div>
+        <div class="stat-value dim" id="v-paused">—</div>
+        <div class="stat-sub" id="v-paused-sub">guardian pause state</div>
+      </div>
+    </div>
+
+    <!-- Slippage -->
+    <div class="field">
+      <label for="in-slippage">Slippage tolerance — enforced onchain via <span style="text-transform:none">minAssets</span></label>
+      <div class="input-row">
+        <input type="text" id="in-slippage" value="0.5" inputmode="decimal" autocomplete="off" spellcheck="false">
+        <div class="suffix">%</div>
+      </div>
+      <div class="hint" id="hint-slippage">The redeem reverts if it would pay out less than this. Applies to redeem only.</div>
+    </div>
+
+    <!-- Redeem all -->
+    <div class="field" style="margin-top:20px;">
+      <label>Option A — Redeem all shares</label>
+      <div class="hint" id="redeem-preview" style="margin-bottom:10px;">Connect a wallet to see your estimated payout.</div>
+      <button id="btn-redeem" class="btn-primary btn-block" disabled>Redeem all shares for USDC</button>
+    </div>
+
+    <!-- Withdraw exact -->
+    <div class="field" style="margin-top:22px; padding-top:20px; border-top:1px solid var(--border);">
+      <label for="in-withdraw">Option B — Withdraw an exact USDC amount</label>
+      <div class="input-row">
+        <input type="text" id="in-withdraw" placeholder="0.00" inputmode="decimal" autocomplete="off" spellcheck="false" disabled>
+        <div class="suffix">USDC</div>
+        <button id="btn-max" class="btn-ghost" disabled>MAX</button>
+      </div>
+      <div class="hint" id="hint-withdraw">A withdrawal pays out exactly this amount or reverts, so there is no slippage guard here — only the share count varies.</div>
+      <button id="btn-withdraw" class="btn-primary btn-block" style="margin-top:12px;" disabled>Withdraw USDC</button>
+    </div>
+  </section>
+
+  <!-- ══ Section 2 — Strategies ══════════════════════════════ -->
+  <section class="card">
+    <div class="section-head">
+      <span class="section-num alt">02</span>
+      <h2>Direct strategy withdrawal</h2>
+    </div>
+    <p class="section-desc">
+      A last-resort path that bypasses EarnGrid entirely and talks to the underlying MetaMorpho vaults on
+      Morpho Blue.
+    </p>
+
+    <div class="notice notice-danger">
+      <b>This is almost certainly not what you need.</b>
+      These buttons redeem <em>your own</em> shares in the MetaMorpho vaults. If you deposited through
+      EarnGrid, you hold <span style="font-family:var(--mono)">bvUSDC</span> and these balances will read
+      zero — that is correct, not a loss. EarnGrid's positions are owned by the vault contract, and only
+      Section 1 can release them to you. This section only helps someone who deposited into a MetaMorpho
+      vault directly.
+    </div>
+
+    <div class="notice notice-info" id="strat-vault-note">
+      For context, the row labelled <b style="color:var(--text-secondary)">EarnGrid vault holds</b> shows
+      where the protocol's assets currently sit. That balance belongs to all depositors collectively and is
+      not withdrawable from here.
+    </div>
+
+    <div id="strat-list"></div>
+  </section>
+
+  <!-- ══ History ═════════════════════════════════════════════ -->
+  <section class="card" id="hist-card" style="display:none;">
+    <div class="section-head"><h2>This session's transactions</h2></div>
+    <div id="hist-list" style="margin-top:10px;"></div>
+  </section>
+
+</div>
+
+<footer>
+  This page is served from GitHub Pages and has no backend. Source:
+  <a href="https://github.com/NukeThemAII/EarnGrid" target="_blank" rel="noopener noreferrer">github.com/NukeThemAII/EarnGrid</a><br>
+  Vault <a href="https://basescan.org/address/0x8694D7D44309665D51Cb5002fceC0454f1c233dE" target="_blank" rel="noopener noreferrer">0x8694D7D44309665D51Cb5002fceC0454f1c233dE</a>
+  · Base Mainnet (8453) · <span id="rpc-label" class="rpc-status">RPC: connecting…</span>
+</footer>
+
+<!-- ══ Confirm modal ═════════════════════════════════════════ -->
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal">
+    <h3 id="modal-title">Confirm</h3>
+    <div id="modal-warn"></div>
+    <div id="modal-rows"></div>
+    <div class="btn-row">
+      <button id="modal-cancel" class="btn-ghost">Cancel</button>
+      <button id="modal-ok" class="btn-primary">Confirm &amp; Sign</button>
+    </div>
+    <p class="hint" style="margin-top:12px;">Your wallet will show the transaction next. Verify the contract
+      address and amount there before approving.</p>
+  </div>
+</div>
+
+<!-- ══ Tx status bar ═════════════════════════════════════════ -->
+<div class="txbar" id="txbar">
+  <div class="txbar-inner">
+    <div class="spinner" id="tx-spinner"></div>
+    <div class="txbar-msg" id="tx-msg"></div>
+    <a class="link" id="tx-link" target="_blank" rel="noopener noreferrer" style="display:none;">View on Basescan ↗</a>
+    <button class="btn-ghost btn-sm" id="tx-dismiss" style="display:none;">Dismiss</button>
+  </div>
+</div>
+
+<!-- Pinned version + Subresource Integrity. A page that helps people sign transactions must not
+     execute whatever the CDN happens to serve; the browser refuses this script if the bytes change. -->
+<script
+  src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.umd.min.js"
+  integrity="sha384-JjzOKxQsr+Jhx75Ot1XldVFnWF2UCtB4Ig2JuEcuBt4VAdUG6alucV+sHrYjPn5C"
+  crossorigin="anonymous"
+  referrerpolicy="no-referrer"></script>
+<script>
+"use strict";
+
+/* If the CDN is unreachable or the integrity check fails, ethers is absent and every
+   handler below would throw an opaque error. Say so plainly instead. */
+if (typeof ethers === "undefined") {
+  document.addEventListener("DOMContentLoaded", function () {
+    var bar = document.getElementById("txbar");
+    bar.className = "txbar open state-err";
+    document.getElementById("tx-spinner").style.display = "none";
+    document.getElementById("tx-msg").textContent =
+      "The ethers.js library failed to load, so this page cannot talk to Base. " +
+      "Check your connection and reload. If it keeps failing, withdraw directly on Basescan: " +
+      "the vault's Write Contract tab exposes redeem() and withdraw().";
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Configuration
+   ═══════════════════════════════════════════════════════════════ */
+
+const CHAIN_ID = 8453n;
+const CHAIN_HEX = "0x2105";
+const EXPLORER = "https://basescan.org";
+
+/* Read-only endpoints, tried in order. The first is the documented public one;
+   the rest exist so a single provider outage cannot brick a recovery page. If
+   all of them fail we fall back to the wallet's own provider. */
+const RPCS = [
+  "https://base-rpc.publicnode.com",
+  "https://mainnet.base.org",
+  "https://base.llamarpc.com",
+];
+
+const VAULT_ADDRESS = "0x8694D7D44309665D51Cb5002fceC0454f1c233dE";
+const USDC_ADDRESS  = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+
+/* Fallback labels only. Real name/symbol/decimals are read from each contract. */
+const STRATEGIES = [
+  { address: "0xeE8F4eC5672F09119b96Ab6fB59C27E1b7e44b61", label: "Gauntlet USDC Prime" },
+  { address: "0xBEEFE94c8aD530842bfE7d8B397938fFc1cb83b2", label: "Steakhouse Prime USDC" },
+  { address: "0xc1256Ae5FF1cf2719D4937adb3bbCCab2E00A2Ca", label: "Moonwell Flagship USDC" },
+  { address: "0x236919F11ff9eA9550A4287696C2FC9e18E6e890", label: "Gauntlet USDC Frontier" },
+  { address: "0xBEEFA7B88064FeEF0cEe02AAeBBd95D30df3878F", label: "Steakhouse High Yield USDC" },
+];
+
+const VAULT_ABI = [
+  {"type":"function","name":"balanceOf","inputs":[{"name":"account","type":"address"}],"outputs":[{"name":"","type":"uint256"}],"stateMutability":"view"},
+  {"type":"function","name":"maxRedeem","inputs":[{"name":"owner","type":"address"}],"outputs":[{"name":"","type":"uint256"}],"stateMutability":"view"},
+  {"type":"function","name":"maxWithdraw","inputs":[{"name":"owner","type":"address"}],"outputs":[{"name":"","type":"uint256"}],"stateMutability":"view"},
+  {"type":"function","name":"previewRedeem","inputs":[{"name":"shares","type":"uint256"}],"outputs":[{"name":"","type":"uint256"}],"stateMutability":"view"},
+  {"type":"function","name":"previewWithdraw","inputs":[{"name":"assets","type":"uint256"}],"outputs":[{"name":"","type":"uint256"}],"stateMutability":"view"},
+  {"type":"function","name":"redeem","inputs":[{"name":"shares","type":"uint256"},{"name":"receiver","type":"address"},{"name":"owner","type":"address"},{"name":"minAssets","type":"uint256"}],"outputs":[{"name":"","type":"uint256"}],"stateMutability":"nonpayable"},
+  {"type":"function","name":"withdraw","inputs":[{"name":"assets","type":"uint256"},{"name":"receiver","type":"address"},{"name":"owner","type":"address"}],"outputs":[{"name":"","type":"uint256"}],"stateMutability":"nonpayable"},
+  {"type":"function","name":"totalAssets","inputs":[],"outputs":[{"name":"","type":"uint256"}],"stateMutability":"view"},
+  {"type":"function","name":"totalSupply","inputs":[],"outputs":[{"name":"","type":"uint256"}],"stateMutability":"view"},
+  {"type":"function","name":"decimals","inputs":[],"outputs":[{"name":"","type":"uint8"}],"stateMutability":"view"},
+  {"type":"function","name":"asset","inputs":[],"outputs":[{"name":"","type":"address"}],"stateMutability":"view"},
+  {"type":"function","name":"convertToAssets","inputs":[{"name":"shares","type":"uint256"}],"outputs":[{"name":"","type":"uint256"}],"stateMutability":"view"},
+  {"type":"function","name":"convertToShares","inputs":[{"name":"assets","type":"uint256"}],"outputs":[{"name":"","type":"uint256"}],"stateMutability":"view"},
+  {"type":"function","name":"getStrategies","inputs":[],"outputs":[{"name":"","type":"address[]"}],"stateMutability":"view"},
+  {"type":"function","name":"strategies","inputs":[{"name":"strategy","type":"address"}],"outputs":[{"name":"","type":"tuple","components":[{"name":"registered","type":"bool"},{"name":"enabled","type":"bool"},{"name":"isSynchronous","type":"bool"},{"name":"tier","type":"uint8"},{"name":"listIndex","type":"uint32"},{"name":"capAssets","type":"uint128"}]}],"stateMutability":"view"},
+  {"type":"function","name":"pausedDeposits","inputs":[],"outputs":[{"name":"","type":"bool"}],"stateMutability":"view"},
+  {"type":"function","name":"pausedWithdrawals","inputs":[],"outputs":[{"name":"","type":"bool"}],"stateMutability":"view"},
+  {"type":"function","name":"name","inputs":[],"outputs":[{"name":"","type":"string"}],"stateMutability":"view"},
+  {"type":"function","name":"symbol","inputs":[],"outputs":[{"name":"","type":"string"}],"stateMutability":"view"}
+];
+
+const STRATEGY_ABI = [
+  {"type":"function","name":"balanceOf","inputs":[{"name":"account","type":"address"}],"outputs":[{"name":"","type":"uint256"}],"stateMutability":"view"},
+  {"type":"function","name":"maxRedeem","inputs":[{"name":"owner","type":"address"}],"outputs":[{"name":"","type":"uint256"}],"stateMutability":"view"},
+  {"type":"function","name":"maxWithdraw","inputs":[{"name":"owner","type":"address"}],"outputs":[{"name":"","type":"uint256"}],"stateMutability":"view"},
+  {"type":"function","name":"previewRedeem","inputs":[{"name":"shares","type":"uint256"}],"outputs":[{"name":"","type":"uint256"}],"stateMutability":"view"},
+  {"type":"function","name":"redeem","inputs":[{"name":"shares","type":"uint256"},{"name":"receiver","type":"address"},{"name":"owner","type":"address"}],"outputs":[{"name":"","type":"uint256"}],"stateMutability":"nonpayable"},
+  {"type":"function","name":"totalAssets","inputs":[],"outputs":[{"name":"","type":"uint256"}],"stateMutability":"view"},
+  {"type":"function","name":"convertToAssets","inputs":[{"name":"shares","type":"uint256"}],"outputs":[{"name":"","type":"uint256"}],"stateMutability":"view"},
+  {"type":"function","name":"name","inputs":[],"outputs":[{"name":"","type":"string"}],"stateMutability":"view"},
+  {"type":"function","name":"symbol","inputs":[],"outputs":[{"name":"","type":"string"}],"stateMutability":"view"},
+  {"type":"function","name":"asset","inputs":[],"outputs":[{"name":"","type":"address"}],"stateMutability":"view"},
+  {"type":"function","name":"decimals","inputs":[],"outputs":[{"name":"","type":"uint8"}],"stateMutability":"view"}
+];
+
+const ERC20_ABI = [
+  {"type":"function","name":"balanceOf","inputs":[{"name":"account","type":"address"}],"outputs":[{"name":"","type":"uint256"}],"stateMutability":"view"},
+  {"type":"function","name":"decimals","inputs":[],"outputs":[{"name":"","type":"uint8"}],"stateMutability":"view"},
+  {"type":"function","name":"symbol","inputs":[],"outputs":[{"name":"","type":"string"}],"stateMutability":"view"}
+];
+
+/* ═══════════════════════════════════════════════════════════════
+   Small helpers
+   ═══════════════════════════════════════════════════════════════ */
+
+const $ = (id) => document.getElementById(id);
+const NA = "—";
+
+/** A read that failed is unknown, never zero — the two must never render alike. */
+const isKnown = (v) => v !== null && v !== undefined;
+
+function setStat(id, text, cls) {
+  const node = $(id);
+  if (!node) return;
+  node.textContent = text;
+  node.className = "stat-value" + (cls ? " " + cls : "");
+}
+
+function shortAddr(a) {
+  return a ? a.slice(0, 6) + "…" + a.slice(-4) : NA;
+}
+
+/** Format a bigint of `decimals` precision for display, without lying about precision. */
+function fmtUnits(value, decimals, displayDp) {
+  if (!isKnown(value)) return NA;
+  const raw = ethers.formatUnits(value, decimals);
+  const dp = displayDp === undefined ? Math.min(decimals, 6) : displayDp;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return raw;
+  // Do not round a non-zero balance down to a flat 0.00 — say it is dust instead.
+  if (value !== 0n && n > 0 && n < Math.pow(10, -dp)) return "< " + Math.pow(10, -dp).toFixed(dp);
+  return n.toLocaleString(undefined, { minimumFractionDigits: Math.min(dp, 2), maximumFractionDigits: dp });
+}
+
+const fmtUsdc = (v, dp) => fmtUnits(v, 6, dp === undefined ? 6 : dp);
+
+function txUrl(hash) { return EXPLORER + "/tx/" + hash; }
+function addrUrl(a) { return EXPLORER + "/address/" + a; }
+
+/**
+ * Parse a user-entered decimal amount.
+ * An empty box is invalid, never 0 — otherwise clearing the field silently
+ * becomes a request to move nothing (or, for a tolerance, to demand exactness).
+ */
+function parseAmount(str, decimals) {
+  const s = String(str == null ? "" : str).trim();
+  if (s === "") return { ok: false, msg: "Enter an amount" };
+  if (!/^\d*\.?\d*$/.test(s) || s === ".") return { ok: false, msg: "Numbers only" };
+  const frac = s.split(".")[1] || "";
+  if (frac.length > decimals) return { ok: false, msg: "At most " + decimals + " decimal places" };
+  let value;
+  try { value = ethers.parseUnits(s, decimals); }
+  catch (_) { return { ok: false, msg: "Invalid amount" }; }
+  if (value <= 0n) return { ok: false, msg: "Amount must be greater than zero" };
+  return { ok: true, value };
+}
+
+/** Slippage in basis points. Empty is invalid; 0% would demand an exact payout. */
+function parseSlippageBps(str) {
+  const s = String(str == null ? "" : str).trim();
+  if (s === "") return { ok: false, msg: "Enter a slippage tolerance" };
+  const n = Number(s);
+  if (!Number.isFinite(n)) return { ok: false, msg: "Numbers only" };
+  if (n <= 0) return { ok: false, msg: "Must be greater than 0% — 0 demands an exact payout and will revert" };
+  if (n > 10) return { ok: false, msg: "Capped at 10% to prevent a costly typo" };
+  const bps = Math.round(n * 100);
+  if (bps <= 0) return { ok: false, msg: "Too small — minimum 0.01%" };
+  return { ok: true, bps, warn: n > 2 ? "That is a wide tolerance for a stablecoin vault." : null };
+}
+
+const applySlippage = (amount, bps) => (amount * BigInt(10000 - bps)) / 10000n;
+
+/** Turn an ethers/provider error into something a stressed person can act on. */
+function describeError(err) {
+  if (!err) return "Unknown error.";
+  const code = err.code;
+  if (code === "ACTION_REJECTED" || code === 4001 || (err.info && err.info.error && err.info.error.code === 4001)) {
+    return "You rejected the request in your wallet. Nothing was sent.";
+  }
+  if (code === "INSUFFICIENT_FUNDS") {
+    return "Not enough ETH on Base to pay for gas. Send a small amount of ETH to this address and retry.";
+  }
+  if (code === "NETWORK_ERROR" || code === "TIMEOUT" || code === "SERVER_ERROR") {
+    return "The network request failed. The RPC may be down — retry, or switch RPC in your wallet.";
+  }
+  const reason = err.reason || (err.info && err.info.error && err.info.error.message) || err.shortMessage;
+  if (reason && /execution reverted/i.test(String(reason)) === false && reason.length < 200) return reason;
+  // Custom error selectors carry no text; surfacing the selector beats a blank.
+  const data = err.data || (err.info && err.info.error && err.info.error.data);
+  if (typeof data === "string" && data.length >= 10 && data !== "0x") {
+    return "The contract rejected the transaction (error " + data.slice(0, 10) +
+           "). It may be paused, or liquidity may have moved since the preview.";
+  }
+  if (reason) return String(reason).slice(0, 240);
+  return (err.shortMessage || err.message || String(err)).slice(0, 240);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Read provider — sequential failover across public RPCs
+   ═══════════════════════════════════════════════════════════════ */
+
+let readProvider = null;
+let readProviderLabel = "";
+let rpcIndex = 0;
+
+async function makeProvider(url) {
+  const p = new ethers.JsonRpcProvider(url, Number(CHAIN_ID), { staticNetwork: true });
+  await p.getBlockNumber();
+  return p;
+}
+
+async function initReadProvider() {
+  for (let i = 0; i < RPCS.length; i++) {
+    try {
+      readProvider = await makeProvider(RPCS[i]);
+      rpcIndex = i;
+      readProviderLabel = new URL(RPCS[i]).hostname;
+      $("rpc-label").textContent = "RPC: " + readProviderLabel;
+      return true;
+    } catch (_) { /* try the next one */ }
+  }
+  if (browserProvider) {
+    readProvider = browserProvider;
+    readProviderLabel = "wallet";
+    $("rpc-label").textContent = "RPC: wallet provider (public endpoints unreachable)";
+    return true;
+  }
+  $("rpc-label").textContent = "RPC: all endpoints unreachable";
+  return false;
+}
+
+/** Rotate to the next endpoint and retry once. Reads are idempotent, so this is safe. */
+async function rotateProvider() {
+  for (let n = 1; n <= RPCS.length; n++) {
+    const i = (rpcIndex + n) % RPCS.length;
+    try {
+      readProvider = await makeProvider(RPCS[i]);
+      rpcIndex = i;
+      readProviderLabel = new URL(RPCS[i]).hostname;
+      $("rpc-label").textContent = "RPC: " + readProviderLabel;
+      return true;
+    } catch (_) { /* keep going */ }
+  }
+  if (browserProvider) { readProvider = browserProvider; readProviderLabel = "wallet"; return true; }
+  return false;
+}
+
+const vaultRead = () => new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, readProvider);
+const stratRead = (addr) => new ethers.Contract(addr, STRATEGY_ABI, readProvider);
+const usdcRead  = () => new ethers.Contract(USDC_ADDRESS, ERC20_ABI, readProvider);
+
+/**
+ * Run independent reads and keep the survivors. One dead read must not void a
+ * whole batch, so this is allSettled over individual calls — never multicall.
+ * A rejected read resolves to null, which the renderers show as "—".
+ */
+async function readAll(makeCalls) {
+  let results = await Promise.allSettled(makeCalls());
+  const allFailed = results.length > 0 && results.every((r) => r.status === "rejected");
+  if (allFailed && await rotateProvider()) {
+    results = await Promise.allSettled(makeCalls());
+  }
+  return results.map((r) => (r.status === "fulfilled" ? r.value : null));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Wallet state
+   ═══════════════════════════════════════════════════════════════ */
+
+let browserProvider = null;
+let account = null;
+let chainOk = false;
+
+const state = {
+  shareDecimals: 12,   // read from chain; never assume
+  vaultSymbol: "bvUSDC",
+  shares: null,
+  maxRedeem: null,
+  maxWithdraw: null,
+  position: null,
+  previewAll: null,
+  tvl: null,
+  price: null,
+  pausedWithdrawals: null,
+  usdc: null,
+  strategies: STRATEGIES.map((s) => Object.assign({}, s, {
+    name: s.label, symbol: "", decimals: 18,
+    shares: null, redeemable: null, maxRedeem: null, vaultShares: null, vaultAssets: null,
+  })),
+};
+
+function hasWallet() {
+  return typeof window.ethereum !== "undefined";
+}
+
+async function connect() {
+  if (!hasWallet()) {
+    setConn("No injected wallet found",
+      "Install MetaMask, or open this page in your wallet's in-app browser.", false);
+    return;
+  }
+  try {
+    browserProvider = new ethers.BrowserProvider(window.ethereum, "any");
+    const accounts = await browserProvider.send("eth_requestAccounts", []);
+    if (!accounts || accounts.length === 0) throw new Error("No account returned by the wallet.");
+    account = ethers.getAddress(accounts[0]);
+    await checkNetwork();
+    await refreshAll();
+  } catch (err) {
+    setConn("Connection failed", describeError(err), false);
+  }
+}
+
+async function checkNetwork() {
+  const net = await browserProvider.getNetwork();
+  chainOk = net.chainId === CHAIN_ID;
+  if (chainOk) {
+    setConn(account, "Base Mainnet · chain 8453", true);
+    $("btn-switch").style.display = "none";
+  } else {
+    setConn(account, "Wrong network — chain " + net.chainId.toString() + ". Switch to Base to continue.", false);
+    $("btn-switch").style.display = "";
+  }
+  $("btn-connect").style.display = "none";
+  $("btn-refresh").style.display = "";
+  updateControls();
+}
+
+async function switchToBase() {
+  try {
+    await browserProvider.send("wallet_switchEthereumChain", [{ chainId: CHAIN_HEX }]);
+  } catch (err) {
+    const code = err && (err.code || (err.info && err.info.error && err.info.error.code));
+    if (code === 4902) {
+      try {
+        await browserProvider.send("wallet_addEthereumChain", [{
+          chainId: CHAIN_HEX,
+          chainName: "Base",
+          nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+          rpcUrls: ["https://mainnet.base.org"],
+          blockExplorerUrls: [EXPLORER],
+        }]);
+      } catch (addErr) {
+        txError("Could not add Base to your wallet: " + describeError(addErr));
+        return;
+      }
+    } else {
+      txError(describeError(err));
+      return;
+    }
+  }
+  await checkNetwork();
+  await refreshAll();
+}
+
+function setConn(title, detail, ok) {
+  const el = $("conn-status");
+  el.innerHTML = "";
+  if (account && title === account) {
+    const pill = document.createElement("span");
+    pill.className = "pill " + (ok ? "ok" : "bad");
+    pill.innerHTML = '<span class="dot"></span>' + (ok ? "Base 8453" : "Wrong network");
+    const addr = document.createElement("span");
+    addr.className = "acct-addr";
+    addr.textContent = shortAddr(account);
+    addr.title = account;
+    el.appendChild(addr);
+    el.appendChild(document.createTextNode(" "));
+    el.appendChild(pill);
+  } else {
+    el.textContent = title;
+  }
+  $("conn-detail").textContent = detail;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Data loading
+   ═══════════════════════════════════════════════════════════════ */
+
+async function loadVault() {
+  const who = account || ethers.ZeroAddress;
+  const v = vaultRead();
+
+  const [decimals, symbol, tvl, shares, maxRedeem, maxWithdraw, pausedW, usdcBal] = await readAll(() => [
+    v.decimals(), v.symbol(), v.totalAssets(), v.balanceOf(who),
+    v.maxRedeem(who), v.maxWithdraw(who), v.pausedWithdrawals(),
+    usdcRead().balanceOf(who),
+  ]);
+
+  if (isKnown(decimals)) state.shareDecimals = Number(decimals);
+  if (isKnown(symbol)) state.vaultSymbol = symbol;
+  state.tvl = tvl;
+  state.shares = shares;
+  state.maxRedeem = maxRedeem;
+  state.maxWithdraw = maxWithdraw;
+  state.pausedWithdrawals = pausedW;
+  state.usdc = usdcBal;
+
+  const oneShare = 10n ** BigInt(state.shareDecimals);
+  const [price, position, previewAll] = await readAll(() => [
+    v.convertToAssets(oneShare),
+    isKnown(shares) && shares > 0n ? v.convertToAssets(shares) : Promise.resolve(0n),
+    isKnown(maxRedeem) && maxRedeem > 0n ? v.previewRedeem(maxRedeem) : Promise.resolve(0n),
+  ]);
+  state.price = price;
+  state.position = position;
+  state.previewAll = previewAll;
+
+  renderVault();
+}
+
+async function loadStrategies() {
+  const who = account || ethers.ZeroAddress;
+
+  await Promise.all(state.strategies.map(async (s, i) => {
+    const c = stratRead(s.address);
+    const [name, symbol, decimals, bal, maxRed, vaultBal] = await readAll(() => [
+      c.name(), c.symbol(), c.decimals(), c.balanceOf(who), c.maxRedeem(who), c.balanceOf(VAULT_ADDRESS),
+    ]);
+
+    if (isKnown(name)) s.name = name;
+    if (isKnown(symbol)) s.symbol = symbol;
+    if (isKnown(decimals)) s.decimals = Number(decimals);
+    s.shares = bal;
+    s.maxRedeem = maxRed;
+    s.vaultShares = vaultBal;
+
+    const [redeemable, vaultAssets] = await readAll(() => [
+      isKnown(bal) && bal > 0n ? c.previewRedeem(bal) : Promise.resolve(0n),
+      isKnown(vaultBal) && vaultBal > 0n ? c.convertToAssets(vaultBal) : Promise.resolve(0n),
+    ]);
+    s.redeemable = redeemable;
+    s.vaultAssets = vaultAssets;
+
+    renderStrategy(i);
+  }));
+}
+
+async function refreshAll() {
+  if (!readProvider && !(await initReadProvider())) {
+    txError("Every RPC endpoint is unreachable. Check your internet connection and retry.");
+    return;
+  }
+  $("btn-refresh").disabled = true;
+  try {
+    await Promise.all([loadVault(), loadStrategies()]);
+  } finally {
+    $("btn-refresh").disabled = false;
+    updateControls();
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Rendering
+   ═══════════════════════════════════════════════════════════════ */
+
+function renderVault() {
+  const d = state.shareDecimals;
+
+  setStat("v-shares", fmtUnits(state.shares, d, 6), isKnown(state.shares) && state.shares > 0n ? "" : "dim");
+  $("v-shares-sub").textContent = state.vaultSymbol + " · " + d + " decimals";
+
+  setStat("v-position", isKnown(state.position) ? "$" + fmtUsdc(state.position, 2) : NA,
+          isKnown(state.position) && state.position > 0n ? "accent" : "dim");
+
+  setStat("v-maxwithdraw", isKnown(state.maxWithdraw) ? "$" + fmtUsdc(state.maxWithdraw, 2) : NA,
+          isKnown(state.maxWithdraw) && state.maxWithdraw > 0n ? "" : "dim");
+
+  setStat("v-tvl", isKnown(state.tvl) ? "$" + fmtUsdc(state.tvl, 2) : NA, isKnown(state.tvl) ? "" : "dim");
+
+  setStat("v-price", isKnown(state.price) ? fmtUnits(state.price, 6, 6) : NA, isKnown(state.price) ? "" : "dim");
+
+  if (!isKnown(state.pausedWithdrawals)) {
+    setStat("v-paused", NA, "dim");
+    $("v-paused-sub").textContent = "could not read pause state";
+  } else if (state.pausedWithdrawals) {
+    setStat("v-paused", "PAUSED", "bad");
+    $("v-paused-sub").textContent = "the guardian has halted withdrawals";
+  } else {
+    setStat("v-paused", "Open", "accent");
+    $("v-paused-sub").textContent = "withdrawals are enabled";
+  }
+
+  // maxWithdraw is a liquidity claim, not a position value. Say which is which.
+  //
+  // Do NOT infer a liquidity shortfall from maxWithdraw < position: maxWithdraw is net of the
+  // performance fee while position is not, so that comparison is true on a perfectly healthy
+  // vault and would cry shortage at the worst possible moment. A genuine constraint shows up as
+  // maxRedeem < balanceOf — the vault refusing to redeem shares it otherwise owes you.
+  const sub = $("v-maxwithdraw-sub");
+  if (isKnown(state.pausedWithdrawals) && state.pausedWithdrawals) {
+    sub.textContent = "0 because withdrawals are paused — your position is unaffected";
+  } else if (isKnown(state.maxRedeem) && isKnown(state.shares) &&
+             state.shares > 0n && state.maxRedeem < state.shares) {
+    sub.textContent = "capped by strategy liquidity — less than your full position";
+  } else if (isKnown(state.shares) && state.shares > 0n) {
+    sub.textContent = "your full position, net of the performance fee";
+  } else {
+    sub.textContent = "limited by available liquidity";
+  }
+
+  renderVaultAlert();
+  renderRedeemPreview();
+}
+
+function renderVaultAlert() {
+  const box = $("vault-alert");
+  box.innerHTML = "";
+
+  const add = (cls, html) => {
+    const n = document.createElement("div");
+    n.className = "notice " + cls;
+    n.innerHTML = html;
+    box.appendChild(n);
+  };
+
+  if (!account) {
+    add("notice-info", "Connect your wallet to load your balances. All figures below are read live from Base.");
+    return;
+  }
+  if (!chainOk) {
+    add("notice-warn", "<b>Wrong network.</b> Switch your wallet to Base (chain 8453) before withdrawing.");
+    return;
+  }
+  if (isKnown(state.pausedWithdrawals) && state.pausedWithdrawals) {
+    add("notice-danger", "<b>Withdrawals are paused onchain.</b> The guardian has halted redemptions, so " +
+      "transactions here will revert until it is lifted. Your shares and their value are untouched — this is a " +
+      "gate, not a loss.");
+  }
+  if (isKnown(state.shares) && state.shares === 0n) {
+    add("notice-info", "This wallet holds no " + state.vaultSymbol + " shares. If you expected a balance, " +
+      "check that you are connected with the right account.");
+  }
+  if (isKnown(state.usdc)) {
+    add("notice-info", "Wallet USDC balance: <b style=\"color:var(--text-primary)\">$" + fmtUsdc(state.usdc, 2) +
+      "</b> — this is what withdrawals pay into.");
+  }
+}
+
+function renderRedeemPreview() {
+  const el = $("redeem-preview");
+  el.className = "hint";
+
+  if (!account) { el.textContent = "Connect a wallet to see your estimated payout."; return; }
+  if (!isKnown(state.maxRedeem)) {
+    el.textContent = "Could not read your redeemable share count. Retry, or check the RPC status in the footer.";
+    el.className = "hint error";
+    return;
+  }
+  if (state.maxRedeem === 0n) {
+    el.textContent = isKnown(state.shares) && state.shares > 0n
+      ? "Redeemable right now: 0 shares. Your shares are intact, but the vault cannot pay out at this moment."
+      : "Nothing to redeem — this wallet holds no shares.";
+    return;
+  }
+
+  const payout = isKnown(state.previewAll) ? "$" + fmtUsdc(state.previewAll, 6) : "unavailable";
+  let text = "Redeems " + fmtUnits(state.maxRedeem, state.shareDecimals, 6) + " " + state.vaultSymbol +
+             " for approximately " + payout + " (after the performance fee).";
+
+  if (isKnown(state.shares) && state.maxRedeem < state.shares) {
+    const left = state.shares - state.maxRedeem;
+    text += " Liquidity limits this to part of your balance — " +
+            fmtUnits(left, state.shareDecimals, 6) + " " + state.vaultSymbol +
+            " would remain, redeemable later.";
+    el.className = "hint warn";
+  }
+  el.textContent = text;
+}
+
+function renderStrategy(i) {
+  const s = state.strategies[i];
+  const node = $("strat-" + i);
+  if (!node) return;
+
+  const hasShares = isKnown(s.shares) && s.shares > 0n;
+  const canRedeem = account && chainOk && isKnown(s.maxRedeem) && s.maxRedeem > 0n;
+
+  node.querySelector(".strat-name").textContent = s.name;
+  node.querySelector(".js-symbol").textContent = s.symbol ? s.symbol + " · " : "";
+  node.querySelector(".js-decimals").textContent = s.decimals + " decimals";
+
+  const yourShares = node.querySelector(".js-your-shares");
+  yourShares.textContent = isKnown(s.shares) ? fmtUnits(s.shares, s.decimals, 6) : NA;
+  yourShares.className = "stat-value js-your-shares" + (hasShares ? "" : " dim");
+
+  const yourValue = node.querySelector(".js-your-value");
+  yourValue.textContent = isKnown(s.redeemable) ? "$" + fmtUsdc(s.redeemable, 6) : NA;
+  yourValue.className = "stat-value js-your-value" + (hasShares ? " accent" : " dim");
+
+  const vaultCell = node.querySelector(".js-vault-value");
+  vaultCell.textContent = isKnown(s.vaultAssets) ? "$" + fmtUsdc(s.vaultAssets, 2) : NA;
+  vaultCell.className = "stat-value js-vault-value dim";
+
+  const btn = node.querySelector(".js-redeem");
+  btn.disabled = !canRedeem;
+  btn.textContent = hasShares ? "Redeem your shares" : "Nothing to redeem";
+
+  const note = node.querySelector(".js-note");
+  if (!account) note.textContent = "Connect a wallet to check your balance here.";
+  else if (!isKnown(s.shares)) note.textContent = "Balance unavailable — the read failed, so this is unknown, not zero.";
+  else if (!hasShares) note.textContent = "You hold no shares in this vault directly. Expected if you deposited through EarnGrid.";
+  else if (isKnown(s.maxRedeem) && s.maxRedeem < s.shares)
+    note.textContent = "Only " + fmtUnits(s.maxRedeem, s.decimals, 6) + " shares are redeemable right now — this market is short on liquidity.";
+  else note.textContent = "Redeems directly from " + s.name + ". EarnGrid is not involved in this transaction.";
+}
+
+function buildStrategyList() {
+  const list = $("strat-list");
+  list.innerHTML = "";
+
+  state.strategies.forEach((s, i) => {
+    const el = document.createElement("div");
+    el.className = "strat";
+    el.id = "strat-" + i;
+    el.innerHTML =
+      '<div class="strat-head">' +
+        '<div>' +
+          '<div class="strat-name">' + s.label + '</div>' +
+          '<div class="strat-meta"><span class="js-symbol"></span><span class="js-decimals"></span> · ' +
+            '<a href="' + addrUrl(s.address) + '" target="_blank" rel="noopener noreferrer">' +
+            shortAddr(s.address) + ' ↗</a></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="strat-grid">' +
+        '<div class="strat-cell"><div class="stat-label">Your shares</div>' +
+          '<div class="stat-value js-your-shares dim">' + NA + '</div></div>' +
+        '<div class="strat-cell"><div class="stat-label">Your redeemable USDC</div>' +
+          '<div class="stat-value js-your-value dim">' + NA + '</div></div>' +
+        '<div class="strat-cell"><div class="stat-label">EarnGrid vault holds</div>' +
+          '<div class="stat-value js-vault-value dim">' + NA + '</div>' +
+          '<div class="stat-sub">not yours to withdraw here</div></div>' +
+      '</div>' +
+      '<div class="hint js-note" style="margin-bottom:10px;">Connect a wallet to check your balance here.</div>' +
+      '<button class="btn-warning btn-sm js-redeem" disabled>Nothing to redeem</button>';
+
+    el.querySelector(".js-redeem").addEventListener("click", () => redeemFromStrategy(i));
+    list.appendChild(el);
+  });
+}
+
+function updateControls() {
+  const ready = Boolean(account) && chainOk;
+  const canRedeem = ready && isKnown(state.maxRedeem) && state.maxRedeem > 0n;
+  const canWithdraw = ready && isKnown(state.maxWithdraw) && state.maxWithdraw > 0n;
+
+  $("btn-redeem").disabled = !canRedeem;
+  $("btn-withdraw").disabled = !canWithdraw;
+  $("btn-max").disabled = !canWithdraw;
+  $("in-withdraw").disabled = !canWithdraw;
+
+  state.strategies.forEach((_, i) => renderStrategy(i));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Confirm modal
+   ═══════════════════════════════════════════════════════════════ */
+
+let modalResolve = null;
+
+function confirmDialog(opts) {
+  $("modal-title").textContent = opts.title;
+  $("modal-warn").innerHTML = opts.warn
+    ? '<div class="notice ' + (opts.danger ? "notice-danger" : "notice-warn") + '">' + opts.warn + "</div>"
+    : "";
+
+  const rows = $("modal-rows");
+  rows.innerHTML = "";
+  opts.rows.forEach((r) => {
+    const div = document.createElement("div");
+    div.className = "kv";
+    const k = document.createElement("span"); k.className = "kv-k"; k.textContent = r[0];
+    const v = document.createElement("span"); v.className = "kv-v"; v.textContent = r[1];
+    div.appendChild(k); div.appendChild(v);
+    rows.appendChild(div);
+  });
+
+  $("modal-ok").textContent = opts.confirmLabel || "Confirm & Sign";
+  $("modal-ok").className = opts.danger ? "btn-danger" : "btn-primary";
+  $("overlay").classList.add("open");
+
+  return new Promise((resolve) => { modalResolve = resolve; });
+}
+
+function closeModal(result) {
+  $("overlay").classList.remove("open");
+  if (modalResolve) { modalResolve(result); modalResolve = null; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Transaction status
+   ═══════════════════════════════════════════════════════════════ */
+
+function txShow(state_, msg, hash) {
+  const bar = $("txbar");
+  bar.className = "txbar open state-" + state_;
+  $("tx-msg").textContent = msg;
+  $("tx-spinner").style.display = state_ === "pending" ? "" : "none";
+  $("tx-dismiss").style.display = state_ === "pending" ? "none" : "";
+  const link = $("tx-link");
+  if (hash) { link.href = txUrl(hash); link.style.display = ""; }
+  else { link.style.display = "none"; }
+}
+
+const txPending = (msg, hash) => txShow("pending", msg, hash);
+const txOk = (msg, hash) => txShow("ok", msg, hash);
+const txError = (msg, hash) => txShow("err", msg, hash);
+
+function addHistory(label, hash, ok) {
+  $("hist-card").style.display = "";
+  const item = document.createElement("div");
+  item.className = "hist-item";
+  const left = document.createElement("span");
+  left.textContent = (ok ? "✓ " : "✗ ") + label;
+  left.style.color = ok ? "var(--accent)" : "var(--danger)";
+  const right = document.createElement("a");
+  right.className = "link";
+  right.href = txUrl(hash);
+  right.target = "_blank";
+  right.rel = "noopener noreferrer";
+  right.textContent = shortAddr(hash) + " ↗";
+  item.appendChild(left); item.appendChild(right);
+  $("hist-list").prepend(item);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Transaction engine
+   ═══════════════════════════════════════════════════════════════
+   estimate → preview → confirm → send → receipt → explorer link.
+   The gas estimate runs before the confirm dialog so a doomed
+   transaction is caught before the user is asked to sign anything.  */
+
+let txInFlight = false;
+
+async function runTx(cfg) {
+  if (txInFlight) return;
+  if (!account || !chainOk) { txError("Connect a wallet on Base first."); return; }
+
+  txInFlight = true;
+  try {
+    // Re-check the chain: the wallet may have moved since the page loaded.
+    const net = await browserProvider.getNetwork();
+    if (net.chainId !== CHAIN_ID) {
+      chainOk = false;
+      updateControls();
+      txError("Your wallet is no longer on Base. Switch networks and retry.");
+      return;
+    }
+
+    const signer = await browserProvider.getSigner();
+    const signerAddr = ethers.getAddress(await signer.getAddress());
+    if (signerAddr !== account) {
+      account = signerAddr;
+      await refreshAll();
+      txError("The active account changed. Balances were reloaded — review them and retry.");
+      return;
+    }
+
+    txPending("Simulating the transaction…");
+    const built = await cfg.build(signer);   // { method, args, label, rows, warn, danger }
+
+    let gas;
+    try {
+      gas = await built.method.estimateGas.apply(built.method, built.args);
+    } catch (err) {
+      txError("Simulation failed, so nothing was sent: " + describeError(err));
+      return;
+    }
+
+    txShow("ok", "Simulation succeeded. Review the details.");
+    const confirmed = await confirmDialog({
+      title: built.label,
+      rows: built.rows.concat([["Estimated gas", gas.toString() + " units"]]),
+      warn: built.warn,
+      danger: built.danger,
+    });
+    if (!confirmed) { txShow("ok", "Cancelled. Nothing was sent."); return; }
+
+    txPending("Waiting for you to approve in your wallet…");
+    const gasLimit = (gas * 125n) / 100n;   // headroom for state drift between blocks
+    const tx = await built.method.apply(null, built.args.concat([{ gasLimit }]));
+
+    txPending("Transaction sent. Waiting for confirmation…", tx.hash);
+    const receipt = await tx.wait(1);
+
+    if (!receipt || receipt.status !== 1) {
+      txError("The transaction was mined but reverted. Your funds did not move.", tx.hash);
+      addHistory(built.label + " (reverted)", tx.hash, false);
+      return;
+    }
+
+    txOk(cfg.successMessage || "Done. " + built.label + " confirmed.", tx.hash);
+    addHistory(built.label, tx.hash, true);
+    await refreshAll();
+  } catch (err) {
+    txError(describeError(err));
+  } finally {
+    txInFlight = false;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Actions
+   ═══════════════════════════════════════════════════════════════ */
+
+function redeemAll() {
+  const slip = parseSlippageBps($("in-slippage").value);
+  if (!slip.ok) { setSlippageHint(slip); txError("Fix the slippage tolerance: " + slip.msg); return; }
+
+  runTx({
+    successMessage: "Redeemed. Your USDC has arrived in your wallet.",
+    build: async (signer) => {
+      const vault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
+
+      // Re-read at signing time; the preview on screen may be blocks old.
+      const shares = await vault.maxRedeem(account);
+      if (shares === 0n) throw new Error("There is nothing redeemable right now. Refresh and check the pause state.");
+
+      const expected = await vault.previewRedeem(shares);
+      const minAssets = applySlippage(expected, slip.bps);
+
+      return {
+        method: vault["redeem(uint256,address,address,uint256)"],
+        args: [shares, account, account, minAssets],
+        label: "Redeem all shares",
+        warn: slip.warn,
+        rows: [
+          ["Shares redeemed", fmtUnits(shares, state.shareDecimals, 6) + " " + state.vaultSymbol],
+          ["Expected payout", "$" + fmtUsdc(expected, 6)],
+          ["Minimum accepted", "$" + fmtUsdc(minAssets, 6) + "  (−" + (slip.bps / 100) + "%)"],
+          ["Paid to", shortAddr(account)],
+          ["Contract", shortAddr(VAULT_ADDRESS)],
+        ],
+      };
+    },
+  });
+}
+
+function withdrawExact() {
+  const parsed = parseAmount($("in-withdraw").value, 6);
+  if (!parsed.ok) { setWithdrawHint(parsed.msg, true); txError("Fix the amount: " + parsed.msg); return; }
+
+  runTx({
+    successMessage: "Withdrawn. Your USDC has arrived in your wallet.",
+    build: async (signer) => {
+      const vault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
+
+      const limit = await vault.maxWithdraw(account);
+      if (parsed.value > limit) {
+        throw new Error("You asked for $" + fmtUsdc(parsed.value, 6) +
+          " but only $" + fmtUsdc(limit, 6) + " is withdrawable right now.");
+      }
+      const sharesBurned = await vault.previewWithdraw(parsed.value);
+
+      return {
+        method: vault["withdraw(uint256,address,address)"],
+        args: [parsed.value, account, account],
+        label: "Withdraw " + fmtUsdc(parsed.value, 6) + " USDC",
+        warn: "A withdrawal has no <span style=\"font-family:var(--mono)\">minAssets</span> guard because it " +
+              "pays out exactly the amount requested or reverts. Only the share count can vary.",
+        rows: [
+          ["You receive", "$" + fmtUsdc(parsed.value, 6) + " USDC"],
+          ["Shares burned (est.)", fmtUnits(sharesBurned, state.shareDecimals, 6) + " " + state.vaultSymbol],
+          ["Paid to", shortAddr(account)],
+          ["Contract", shortAddr(VAULT_ADDRESS)],
+        ],
+      };
+    },
+  });
+}
+
+function redeemFromStrategy(i) {
+  const s = state.strategies[i];
+
+  runTx({
+    successMessage: "Redeemed from " + s.name + " directly.",
+    build: async (signer) => {
+      const c = new ethers.Contract(s.address, STRATEGY_ABI, signer);
+
+      const shares = await c.maxRedeem(account);
+      if (shares === 0n) throw new Error("You have nothing redeemable in " + s.name + ".");
+
+      const expected = await c.previewRedeem(shares);
+
+      return {
+        method: c["redeem(uint256,address,address)"],
+        args: [shares, account, account],
+        label: "Redeem from " + s.name,
+        danger: true,
+        warn: "<b>This bypasses EarnGrid.</b> You are calling the MetaMorpho vault directly. It exposes no " +
+              "<span style=\"font-family:var(--mono)\">minAssets</span> guard, so there is no slippage " +
+              "protection on this path.",
+        rows: [
+          ["Shares redeemed", fmtUnits(shares, s.decimals, 6) + " " + (s.symbol || "shares")],
+          ["Expected payout", "$" + fmtUsdc(expected, 6)],
+          ["Paid to", shortAddr(account)],
+          ["Contract", shortAddr(s.address)],
+        ],
+      };
+    },
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Input wiring
+   ═══════════════════════════════════════════════════════════════ */
+
+function setWithdrawHint(msg, isError) {
+  const el = $("hint-withdraw");
+  el.textContent = msg;
+  el.className = "hint" + (isError ? " error" : "");
+  $("in-withdraw").classList.toggle("invalid", Boolean(isError));
+}
+
+function setSlippageHint(parsed) {
+  const el = $("hint-slippage");
+  const input = $("in-slippage");
+  if (!parsed.ok) {
+    el.textContent = parsed.msg;
+    el.className = "hint error";
+    input.classList.add("invalid");
+  } else if (parsed.warn) {
+    el.textContent = parsed.warn;
+    el.className = "hint warn";
+    input.classList.remove("invalid");
+  } else {
+    el.textContent = "The redeem reverts if it would pay out less than this. Applies to redeem only.";
+    el.className = "hint";
+    input.classList.remove("invalid");
+  }
+}
+
+const DEFAULT_WITHDRAW_HINT =
+  "A withdrawal pays out exactly this amount or reverts, so there is no slippage guard here — only the share count varies.";
+
+function wireInputs() {
+  $("in-slippage").addEventListener("input", (e) => setSlippageHint(parseSlippageBps(e.target.value)));
+
+  $("in-withdraw").addEventListener("input", (e) => {
+    const raw = e.target.value.trim();
+    if (raw === "") { setWithdrawHint(DEFAULT_WITHDRAW_HINT, false); return; }
+
+    const parsed = parseAmount(raw, 6);
+    if (!parsed.ok) { setWithdrawHint(parsed.msg, true); return; }
+
+    if (isKnown(state.maxWithdraw) && parsed.value > state.maxWithdraw) {
+      setWithdrawHint("More than the $" + fmtUsdc(state.maxWithdraw, 6) + " withdrawable right now.", true);
+      return;
+    }
+    setWithdrawHint("Withdraws exactly $" + fmtUsdc(parsed.value, 6) + " USDC to your wallet.", false);
+  });
+
+  $("btn-max").addEventListener("click", () => {
+    if (!isKnown(state.maxWithdraw)) return;
+    $("in-withdraw").value = ethers.formatUnits(state.maxWithdraw, 6);
+    $("in-withdraw").dispatchEvent(new Event("input"));
+  });
+
+  $("btn-connect").addEventListener("click", connect);
+  $("btn-switch").addEventListener("click", switchToBase);
+  $("btn-refresh").addEventListener("click", refreshAll);
+  $("btn-redeem").addEventListener("click", redeemAll);
+  $("btn-withdraw").addEventListener("click", withdrawExact);
+
+  $("modal-ok").addEventListener("click", () => closeModal(true));
+  $("modal-cancel").addEventListener("click", () => closeModal(false));
+  $("overlay").addEventListener("click", (e) => { if (e.target === $("overlay")) closeModal(false); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && $("overlay").classList.contains("open")) closeModal(false);
+  });
+
+  $("tx-dismiss").addEventListener("click", () => { $("txbar").className = "txbar"; });
+}
+
+function wireWalletEvents() {
+  if (!hasWallet() || !window.ethereum.on) return;
+
+  window.ethereum.on("accountsChanged", async (accounts) => {
+    if (!accounts || accounts.length === 0) {
+      account = null; chainOk = false;
+      setConn("Wallet disconnected", "Reconnect to continue.", false);
+      $("btn-connect").style.display = "";
+      $("btn-refresh").style.display = "none";
+      $("btn-switch").style.display = "none";
+    } else {
+      account = ethers.getAddress(accounts[0]);
+      await checkNetwork();
+    }
+    await refreshAll();
+  });
+
+  window.ethereum.on("chainChanged", async () => {
+    if (!browserProvider) return;
+    browserProvider = new ethers.BrowserProvider(window.ethereum, "any");
+    await checkNetwork();
+    await refreshAll();
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Boot
+   ═══════════════════════════════════════════════════════════════ */
+
+(async function init() {
+  // Without ethers there is nothing this page can do; the notice above already explains why.
+  if (typeof ethers === "undefined") return;
+
+  buildStrategyList();
+  wireInputs();
+  wireWalletEvents();
+
+  if (!hasWallet()) {
+    setConn("No injected wallet detected",
+      "Install MetaMask, or open this page in your wallet's in-app browser. Public data still loads below.", false);
+    $("btn-connect").disabled = true;
+  }
+
+  const up = await initReadProvider();
+  if (!up) {
+    txError("Every public RPC endpoint is unreachable. Check your connection, then reload.");
+    return;
+  }
+
+  // Load public data before any wallet interaction, so the page is useful immediately.
+  await refreshAll();
+
+  // Reconnect silently if this wallet is already authorised for the page.
+  if (hasWallet()) {
+    try {
+      const accounts = await window.ethereum.request({ method: "eth_accounts" });
+      if (accounts && accounts.length > 0) await connect();
+    } catch (_) { /* no pre-authorised account; the user will click Connect */ }
+  }
+})();
+</script>
+</body>
+</html>

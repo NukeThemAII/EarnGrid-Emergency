@@ -209,6 +209,11 @@
   footer { max-width: 900px; margin: 0 auto; padding: 8px 20px 40px; color: var(--text-muted); font-size: 12px; font-family: var(--mono); line-height: 1.9; }
   footer a { color: var(--text-secondary); text-decoration: none; border-bottom: 1px dotted var(--text-muted); }
   footer a:hover { color: var(--accent); }
+  .footer-section { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .footer-section:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
+  .footer-section strong { color: var(--text-primary); font-weight: 600; }
+  .footer-section code { background: var(--bg-input); padding: 1px 5px; border-radius: 4px; font-size: 11px; color: var(--accent); }
+  a.accent-link { color: var(--accent) !important; border-bottom: 1px solid var(--accent) !important; font-weight: 500; }
 
   .rpc-status { font-family: var(--mono); font-size: 11px; color: var(--text-muted); }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
@@ -381,11 +386,37 @@
 </div>
 
 <footer>
-  This page is served from GitHub Pages and has no backend. Mirror:
-  <a href="https://earngrid.site/emergency.html" target="_blank" rel="noopener noreferrer">earngrid.site</a> ·
-  <a href="https://nukethemaii.github.io/EarnGrid-Emergency/" target="_blank" rel="noopener noreferrer">GitHub Pages</a><br>
-  Vault <a href="https://basescan.org/address/0x8694D7D44309665D51Cb5002fceC0454f1c233dE" target="_blank" rel="noopener noreferrer">0x8694D7D44309665D51Cb5002fceC0454f1c233dE</a>
-  · Base Mainnet (8453) · <span id="rpc-label" class="rpc-status">RPC: connecting…</span>
+  <div class="footer-section">
+    <strong>🔗 Hosting</strong><br>
+    This page is a standalone HTML file — no server, no backend. Mirrors:<br>
+    <a href="https://earngrid.site/emergency.html" target="_blank" rel="noopener noreferrer">earngrid.site</a> ·
+    <a href="https://nukethemaii.github.io/EarnGrid-Emergency/" target="_blank" rel="noopener noreferrer">GitHub Pages</a>
+  </div>
+
+  <div class="footer-section">
+    <strong>🛡️ Trustless fallback — BaseScan Write Contract</strong><br>
+    If this page is unreachable or you don't trust the HTML, you can withdraw directly
+    through the blockchain explorer. No website needed — BaseScan talks to the contract
+    itself.<br>
+    <a href="https://basescan.org/address/0x8694D7D44309665D51Cb5002fceC0454f1c233dE#writeContract"
+       target="_blank" rel="noopener noreferrer" class="accent-link">
+      Open BaseScan Write Contract →
+    </a>
+    <br>
+    <span style="color:var(--text-secondary);font-size:0.9em;">
+      Connect MetaMask via the "Connect to Web3" button, then call <code>redeem(shares, receiver, owner, minAssets)</code>.
+      Your <code>shares</code> = <code>balanceOf(yourAddress)</code> from the Read tab.
+      <code>receiver</code> = your wallet. <code>owner</code> = your wallet.
+      <code>minAssets</code> = <code>shares × sharePrice × 0.995</code> (0.5% slippage).
+      Decimals: shares use 12, USDC uses 6.
+    </span>
+  </div>
+
+  <div class="footer-section">
+    Vault
+    <a href="https://basescan.org/address/0x8694D7D44309665D51Cb5002fceC0454f1c233dE" target="_blank" rel="noopener noreferrer">0x8694D7D4…</a>
+    · Base Mainnet (8453) · <span id="rpc-label" class="rpc-status">RPC: connecting…</span>
+  </div>
 </footer>
 
 <!-- ══ Confirm modal ═════════════════════════════════════════ -->

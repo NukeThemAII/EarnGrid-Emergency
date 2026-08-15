@@ -21,7 +21,7 @@ through your wallet's injected provider.
 
 | Contract | Address |
 |---|---|
-| BlendedVault | `0x8694D7D44309665D51Cb5002fceC0454f1c233dE` |
+| BlendedVault | `0xbDacA8B7782C66cc0ee32Cf70F835EBe86cb20D3` |
 | USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
 | Gauntlet USDC Prime | `0xeE8F4eC5672F09119b96Ab6fB59C27E1b7e44b61` |
 | Steakhouse Prime USDC | `0xBEEFE94c8aD530842bfE7d8B397938fFc1cb83b2` |

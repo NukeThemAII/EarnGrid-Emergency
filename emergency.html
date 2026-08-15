@@ -478,11 +478,11 @@ const EXPLORER = "https://basescan.org";
 
 /* Read-only endpoints, tried in order. The first is the documented public one;
    the rest exist so a single provider outage cannot brick a recovery page. If
-   all of them fail we fall back to the wallet's own provider. */
+   all of them fail we fall back to the wallet's own provider.
+   (mainnet.base.org and base.llamarpc.com were removed 2026-08-15 — dead endpoints.) */
 const RPCS = [
   "https://base-rpc.publicnode.com",
-  "https://mainnet.base.org",
-  "https://base.llamarpc.com",
+  "https://base.drpc.org",
 ];
 
 const VAULT_ADDRESS = "0xbDacA8B7782C66cc0ee32Cf70F835EBe86cb20D3";
